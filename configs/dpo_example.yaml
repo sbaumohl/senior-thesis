@@ -1,0 +1,93 @@
+# DPO (Direct Preference Optimization) Training Configuration
+# This example shows how to perform DPO post-training on language models
+
+# Models to train (can specify multiple)
+models:
+  - name: "pythia-1b-dpo"
+    huggingface_id: "EleutherAI/pythia-1b-deduped"
+    trust_remote_code: false
+
+# Preference dataset configuration
+# dataset:
+#   name: "Anthropic/hh-rlhf"  # Helpful/Harmless RLHF dataset
+#   split: "train"
+#   # Column names in the dataset
+#   prompt_column: "prompt"
+#   chosen_column: "chosen"
+#   rejected_column: "rejected"
+#   max_samples: null  # Use all samples
+#   validation_split: 0.1
+dataset:
+  name: "HuggingFaceH4/orca_dpo_pairs"
+  split: "train_prefs"
+  prompt_column: "prompt"
+  chosen_column: "chosen"
+  rejected_column: "rejected"
+  max_samples: null
+  validation_split: 0.15
+
+# Post-training method configuration
+post_training:
+  method: "dpo"  # Options: dpo, ipo, kto, orpo
+  beta: 0.1  # DPO temperature parameter (higher = less aggressive)
+  label_smoothing: 0.0
+  loss_type: "sigmoid"  # Options: sigmoid, hinge, ipo, kto_pair
+  use_ref_model: true  # Use separate reference model
+  ref_model_id: null  # If null, uses same model as policy
+
+# LoRA configuration for parameter-efficient training
+lora:
+  r: 8
+  lora_alpha: 32
+  lora_dropout: 0.05
+  bias: "none"
+  target_modules:
+    - "query_key_value"  # For Pythia
+  task_type: "CAUSAL_LM"
+  use_rslora: false
+  use_dora: false
+
+# Training hyperparameters
+training:
+  output_dir: "./outputs"
+  num_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-7  # Lower LR for post-training
+  warmup_steps: 100
+  max_seq_length: 512
+  max_prompt_length: 256
+  max_completion_length: 256
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  save_total_limit: 3
+  fp16: false
+  bf16: true  # Use bfloat16 if available
+  gradient_checkpointing: true
+  optim: "adamw_torch"
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+
+# GPU configuration
+gpu:
+  device_ids: [0]
+  use_ddp: false
+
+# Fine-tuning options
+finetuning:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  early_stopping_patience: 3
+
+# Logging
+logging:
+  report_to: ["tensorboard"]
+  logging_dir: "./logs"
+  log_level: "info"
+
+# Random seed
+seed: 42

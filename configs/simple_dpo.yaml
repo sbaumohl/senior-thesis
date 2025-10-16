@@ -1,0 +1,54 @@
+# Minimal DPO configuration for quick experiments
+
+models:
+  - name: "tiny-gpt2-dpo"
+    huggingface_id: "sshleifer/tiny-gpt2"
+    trust_remote_code: false
+
+dataset:
+  name: "trl-lib/ultrafeedback_binarized"
+  split: "train"
+  prompt_column: "prompt"
+  chosen_column: "chosen"
+  rejected_column: "rejected"
+  max_samples: 1000
+  validation_split: 0.1
+
+post_training:
+  method: "dpo"
+  beta: 0.1
+  loss_type: "sigmoid"
+  use_ref_model: true
+
+lora:
+  r: 8
+  lora_alpha: 16
+  target_modules: ["c_attn"]
+  task_type: "CAUSAL_LM"
+
+training:
+  output_dir: "./outputs"
+  num_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-7
+  max_seq_length: 512
+  max_prompt_length: 256
+  max_completion_length: 256
+  logging_steps: 50
+  save_steps: 500
+  eval_steps: 500
+  bf16: true
+
+gpu:
+  device_ids: [0]
+
+finetuning:
+  load_best_model_at_end: true
+
+logging:
+  report_to: ["tensorboard"]
+  logging_dir: "./logs"
+
+seed: 42

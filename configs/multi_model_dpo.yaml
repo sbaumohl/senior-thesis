@@ -1,0 +1,62 @@
+# Multi-model DPO training configuration
+# Train multiple models sequentially with the same dataset and hyperparameters
+
+models:
+  - name: "pythia-160m-dpo"
+    huggingface_id: "EleutherAI/pythia-160m-deduped"
+    trust_remote_code: false
+  - name: "pythia-410m-dpo"
+    huggingface_id: "EleutherAI/pythia-410m-deduped"
+    trust_remote_code: false
+
+dataset:
+  name: "Anthropic/hh-rlhf"
+  split: "train"
+  prompt_column: "prompt"
+  chosen_column: "chosen"
+  rejected_column: "rejected"
+  max_samples: 10000
+  validation_split: 0.1
+
+post_training:
+  method: "dpo"
+  beta: 0.1
+  loss_type: "sigmoid"
+  use_ref_model: true
+
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules: ["query_key_value"]
+  task_type: "CAUSAL_LM"
+
+training:
+  output_dir: "./outputs"
+  num_epochs: 1
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-7
+  max_seq_length: 512
+  max_prompt_length: 256
+  max_completion_length: 256
+  logging_steps: 25
+  save_steps: 500
+  eval_steps: 500
+  bf16: true
+  gradient_checkpointing: true
+
+gpu:
+  device_ids: [0]
+  use_ddp: false
+
+finetuning:
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+logging:
+  report_to: ["tensorboard"]
+  logging_dir: "./logs"
+
+seed: 42

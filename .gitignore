@@ -205,3 +205,23 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Training outputs and logs
+outputs/
+logs/
+*.safetensors
+*.bin
+checkpoint-*/
+runs/
+
+# Model files (usually too large for git)
+*.pt
+*.pth
+*.ckpt
+*.model
+
+# TensorBoard logs
+events.out.tfevents.*
+
+# Weights & Biases
+wandb/
