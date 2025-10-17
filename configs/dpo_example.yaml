@@ -3,8 +3,8 @@
 
 # Models to train (can specify multiple)
 models:
-  - name: "pythia-1b-dpo"
-    huggingface_id: "EleutherAI/pythia-1b-deduped"
+  - name: "llamav3.2-1b-it"
+    huggingface_id: "meta-llama/Llama-3.2-1B-Instruct"
     trust_remote_code: false
 
 # Preference dataset configuration
@@ -18,13 +18,19 @@ models:
 #   max_samples: null  # Use all samples
 #   validation_split: 0.1
 dataset:
-  name: "HuggingFaceH4/orca_dpo_pairs"
-  split: "train_prefs"
+  # name: "HuggingFaceH4/orca_dpo_pairs"
+  # split: "train_prefs"
+  # prompt_column: "prompt"
+  # chosen_column: "chosen"
+  # rejected_column: "rejected"
+  # max_samples: null
+  # validation_split: 0.15
+  name: "HumanLLMs/Human-Like-DPO-Dataset"
+  split: "train"
   prompt_column: "prompt"
   chosen_column: "chosen"
   rejected_column: "rejected"
-  max_samples: null
-  validation_split: 0.15
+  validation_split: 0.1
 
 # Post-training method configuration
 post_training:

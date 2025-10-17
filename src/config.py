@@ -8,8 +8,13 @@ import yaml
 
 
 @dataclass
+class WandBConfig:
+    project_name: str
+
+@dataclass
 class ModelConfig:
     """Configuration for a single model."""
+
     name: str
     huggingface_id: str
     trust_remote_code: bool = False
@@ -18,6 +23,7 @@ class ModelConfig:
 @dataclass
 class DatasetConfig:
     """Dataset configuration for preference/reward datasets."""
+
     name: str
     split: str = "train"
     subset: Optional[str] = None
@@ -33,6 +39,7 @@ class DatasetConfig:
 @dataclass
 class LoRAConfig:
     """LoRA (Low-Rank Adaptation) parameters."""
+
     r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
@@ -46,6 +53,7 @@ class LoRAConfig:
 @dataclass
 class PostTrainingConfig:
     """Post-training method configuration (DPO, PPO, etc.)."""
+
     method: str = "dpo"  # Options: dpo, ipo, kto, orpo, ppo
     # DPO-specific parameters
     beta: float = 0.1  # Temperature parameter for DPO
@@ -58,9 +66,11 @@ class PostTrainingConfig:
     ppo_epochs: int = 4
     kl_penalty: str = "kl"  # Options: kl, abs, mse, full
 
+
 @dataclass
 class TrainingConfig:
     """Training hyperparameters."""
+
     output_dir: str = "./outputs"
     num_epochs: int = 3
     per_device_train_batch_size: int = 4
@@ -86,6 +96,7 @@ class TrainingConfig:
 @dataclass
 class GPUConfig:
     """GPU configuration."""
+
     device_ids: List[int] = field(default_factory=lambda: [0])
     use_ddp: bool = False
 
@@ -93,6 +104,7 @@ class GPUConfig:
 @dataclass
 class FineTuningConfig:
     """Fine-tuning specific parameters."""
+
     resume_from_checkpoint: Optional[str] = None
     load_best_model_at_end: bool = True
     metric_for_best_model: str = "eval_loss"
@@ -103,6 +115,7 @@ class FineTuningConfig:
 @dataclass
 class LoggingConfig:
     """Logging and monitoring configuration."""
+
     report_to: List[str] = field(default_factory=lambda: ["tensorboard"])
     logging_dir: str = "./logs"
     log_level: str = "info"
@@ -111,6 +124,7 @@ class LoggingConfig:
 @dataclass
 class TrainingPipelineConfig:
     """Complete post-training pipeline configuration."""
+
     models: List[ModelConfig]
     dataset: DatasetConfig
     post_training: PostTrainingConfig
@@ -119,6 +133,7 @@ class TrainingPipelineConfig:
     gpu: GPUConfig
     finetuning: FineTuningConfig
     logging: LoggingConfig
+    wandb: WandBConfig | None
     seed: int = 42
 
     @classmethod
@@ -182,6 +197,11 @@ class TrainingPipelineConfig:
         # Get seed
         seed = config_dict.get("seed", 42)
 
+        # Parse WandB config
+        wandb = None
+        if "wandb" in config_dict and config_dict["wandb"] is not None:
+            wandb = WandBConfig(**config_dict["wandb"])
+
         return cls(
             models=models,
             dataset=dataset,
@@ -192,6 +212,7 @@ class TrainingPipelineConfig:
             finetuning=finetuning,
             logging=logging,
             seed=seed,
+            wandb=wandb,
         )
 
     def validate(self) -> None:
@@ -208,21 +229,31 @@ class TrainingPipelineConfig:
             raise ValueError(f"LoRA alpha must be positive, got {self.lora.lora_alpha}")
 
         if not 0 <= self.lora.lora_dropout < 1:
-            raise ValueError(f"LoRA dropout must be in [0, 1), got {self.lora.lora_dropout}")
+            raise ValueError(
+                f"LoRA dropout must be in [0, 1), got {self.lora.lora_dropout}"
+            )
 
         # Validate training parameters
         if self.training.num_epochs <= 0:
-            raise ValueError(f"Number of epochs must be positive, got {self.training.num_epochs}")
+            raise ValueError(
+                f"Number of epochs must be positive, got {self.training.num_epochs}"
+            )
 
         if self.training.learning_rate <= 0:
-            raise ValueError(f"Learning rate must be positive, got {self.training.learning_rate}")
+            raise ValueError(
+                f"Learning rate must be positive, got {self.training.learning_rate}"
+            )
 
         if self.training.per_device_train_batch_size <= 0:
-            raise ValueError(f"Batch size must be positive, got {self.training.per_device_train_batch_size}")
+            raise ValueError(
+                f"Batch size must be positive, got {self.training.per_device_train_batch_size}"
+            )
 
         # Validate dataset parameters
         if self.dataset.validation_split < 0 or self.dataset.validation_split >= 1:
-            raise ValueError(f"Validation split must be in [0, 1), got {self.dataset.validation_split}")
+            raise ValueError(
+                f"Validation split must be in [0, 1), got {self.dataset.validation_split}"
+            )
 
         # Validate GPU config
         if not self.gpu.device_ids:
@@ -239,9 +270,15 @@ class TrainingPipelineConfig:
         lines.append(f"  Models: {', '.join([m.name for m in self.models])}")
         lines.append(f"  Dataset: {self.dataset.name}")
         lines.append(f"  LoRA rank: {self.lora.r}, alpha: {self.lora.lora_alpha}")
-        lines.append(f"  Beta: {self.post_training.beta}, Loss: {self.post_training.loss_type}")
-        lines.append(f"  Epochs: {self.training.num_epochs}, LR: {self.training.learning_rate}")
+        lines.append(
+            f"  Beta: {self.post_training.beta}, Loss: {self.post_training.loss_type}"
+        )
+        lines.append(
+            f"  Epochs: {self.training.num_epochs}, LR: {self.training.learning_rate}"
+        )
         lines.append(f"  Batch size: {self.training.per_device_train_batch_size}")
         lines.append(f"  GPUs: {self.gpu.device_ids}")
         lines.append(f"  Output dir: {self.training.output_dir}")
+        if self.wandb:
+            lines.append(f"  WandB Project Name: {self.wandb.project_name}")
         return "\n".join(lines)

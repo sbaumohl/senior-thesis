@@ -6,7 +6,7 @@ models:
     trust_remote_code: false
 
 dataset:
-  name: "trl-lib/ultrafeedback_binarized"
+  name: "HumanLLMs/Human-Like-DPO-Dataset"
   split: "train"
   prompt_column: "prompt"
   chosen_column: "chosen"
@@ -21,24 +21,24 @@ post_training:
   use_ref_model: true
 
 lora:
-  r: 8
+  r: 10
   lora_alpha: 16
   target_modules: ["c_attn"]
   task_type: "CAUSAL_LM"
 
 training:
   output_dir: "./outputs"
-  num_epochs: 1
-  per_device_train_batch_size: 1
-  per_device_eval_batch_size: 1
+  num_epochs: 10
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
   gradient_accumulation_steps: 4
   learning_rate: 5.0e-7
   max_seq_length: 512
   max_prompt_length: 256
   max_completion_length: 256
   logging_steps: 50
-  save_steps: 500
-  eval_steps: 500
+  save_steps: 50
+  eval_steps: 5
   bf16: true
 
 gpu:
@@ -48,7 +48,10 @@ finetuning:
   load_best_model_at_end: true
 
 logging:
-  report_to: ["tensorboard"]
+  report_to: ["tensorboard", "wandb"]
   logging_dir: "./logs"
+
+wandb:
+  project_name: "preference-optimization"
 
 seed: 42
