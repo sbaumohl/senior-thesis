@@ -20,4 +20,4 @@ ENV PYTHONPATH=/app
 VOLUME ["/outputs", "/logs"]
 
 # Default command
-CMD ["uv", "run", "src/train.py", "--help"]
+CMD ["uv", "run", "src/train.py", "--config", "configs/dpo_example.yaml"]
